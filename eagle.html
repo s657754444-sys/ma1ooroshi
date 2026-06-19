@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>인물 소개</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-color:#ffe3ee;
+  --pattern-color:#ffc9de;
+  --accent-color:#ff6f9c;
+  --sub-color:#9b7cff;
+  --window-bg:#fffaf6;
+  --text-color:#4a3b42;
+  --border-color:#4a3b42;
+}
+body.mode-dark{
+  --window-bg:#2c2430;
+  --text-color:#f3e9f5;
+  --border-color:#f3e9f5;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;height:100%;font-family:'Noto Sans KR',sans-serif;color:var(--text-color);}
+#desktop{position:relative;width:100%;height:100vh;overflow:hidden;background-color:var(--bg-color);}
+#desktop.pattern-dot{background-image:radial-gradient(var(--pattern-color) 2px, transparent 2px);background-size:18px 18px;}
+#desktop.pattern-grid{background-image:linear-gradient(var(--pattern-color) 1px, transparent 1px),linear-gradient(90deg, var(--pattern-color) 1px, transparent 1px);background-size:24px 24px;}
+#desktop.pattern-check{background-image:linear-gradient(45deg, var(--pattern-color) 25%, transparent 25%),linear-gradient(-45deg, var(--pattern-color) 25%, transparent 25%),linear-gradient(45deg, transparent 75%, var(--pattern-color) 75%),linear-gradient(-45deg, transparent 75%, var(--pattern-color) 75%);background-size:24px 24px;background-position:0 0,0 12px,12px -12px,-12px 0;}
+#desktop.pattern-gradient{background-image:linear-gradient(160deg, var(--bg-color), var(--pattern-color));}
+
+#desktop-icons{position:absolute;top:16px;left:16px;display:flex;flex-direction:column;gap:6px;z-index:1;}
+.dicon{width:78px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border-radius:10px;cursor:pointer;user-select:none;}
+.dicon:hover{background:rgba(255,255,255,.35);}
+.dicon-emoji{font-size:30px;}
+.dicon-label{font-size:12px;text-align:center;background:rgba(255,255,255,.65);padding:1px 4px;border-radius:4px;}
+
+.pc-grid{display:flex;flex-wrap:wrap;gap:6px;}
+
+/* [변경] 크기 조절이 가능하도록 resize 속성 추가 */
+.window{position:absolute;display:none;flex-direction:column;width:320px;max-width:90vw;max-height:80vh;background:var(--window-bg);border:2px solid var(--border-color);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.18);overflow:hidden;z-index:10;resize:both;overflow:auto;}
+.window.open{display:flex;}
+.win-titlebar{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--accent-color);color:#fff;font-family:'Gaegu',cursive;font-size:18px;cursor:grab;touch-action:none;flex-shrink:0;}
+.win-titlebar:active{cursor:grabbing;}
+.win-close{background:none;border:none;color:#fff;font-size:16px;cursor:pointer;line-height:1;}
+.win-body{padding:14px;overflow-y:auto;font-size:14px;flex-grow:1;}
+
+.profile-photo{width:100%;aspect-ratio:1/1;max-height:220px;border:2px dashed var(--sub-color);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;overflow:hidden;background:rgba(0,0,0,.03);}
+.profile-photo img{width:100%;height:100%;object-fit:cover;}
+.profile-fields label{display:block;font-size:12px;color:var(--sub-color);margin-bottom:8px;font-weight:700;}
+.profile-fields input,.profile-fields textarea{width:100%;margin-top:4px;padding:7px 9px;border:1.5px solid var(--sub-color);border-radius:8px;font-family:inherit;font-size:13px;color:var(--text-color);background:rgba(255,255,255,.7);}
+.profile-fields textarea{resize:vertical;min-height:42px;}
+.profile-row{display:flex;gap:8px;}
+.profile-row label{flex:1;}
+
+button{cursor:pointer;font-family:inherit;}
+.win-body button{border:1.5px solid var(--accent-color);background:var(--accent-color);color:#fff;border-radius:20px;padding:6px 12px;font-size:13px;}
+.win-body button.ghost{background:transparent;color:var(--accent-color);}
+
+.row-flex{display:flex;gap:6px;margin-bottom:10px;}
+.row-flex input{flex:1;padding:6px 9px;border:1.5px solid var(--sub-color);border-radius:8px;font-family:inherit;}
+
+ul.list-plain{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;}
+.list-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;border:1px solid rgba(0,0,0,.08);border-radius:8px;background:rgba(255,255,255,.5);}
+.list-item.done span{text-decoration:line-through;opacity:.5;}
+.list-item .x-btn{background:none;border:none;color:var(--sub-color);cursor:pointer;font-size:14px;}
+
+.album-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.album-thumb{position:relative;aspect-ratio:1/1;border-radius:8px;overflow:hidden;border:1px solid rgba(0,0,0,.1);}
+.album-thumb img{width:100%;height:100%;object-fit:cover;cursor:pointer;}
+
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:999;}
+.lightbox.open{display:flex;}
+.lightbox img{max-width:90vw;max-height:85vh;border-radius:8px;}
+.lightbox button{position:absolute;top:20px;right:24px;background:none;border:none;color:#fff;font-size:24px;cursor:pointer;}
+
+.sticker{position:absolute;cursor:move;touch-action:none;user-select:none;font-size:48px;line-height:1;z-index:5;}
+.sticker.selected{outline:1.5px dashed var(--sub-color);outline-offset:6px;}
+.sticker .handle{position:absolute;width:14px;height:14px;background:var(--accent-color);border-radius:50%;display:none;}
+.sticker.selected .handle{display:block;}
+.sticker .handle.resize{right:-10px;bottom:-10px;cursor:nwse-resize;}
+.sticker .handle.rotate{left:-10px;top:-10px;cursor:grab;}
+.sticker .mini-toolbar{position:absolute;top:-32px;left:50%;transform:translateX(-50%);display:none;gap:3px;background:#fff;border:1px solid var(--sub-color);border-radius:8px;padding:3px 5px;white-space:nowrap;}
+.sticker.selected .mini-toolbar{display:flex;}
+.sticker .mini-toolbar button{border:none;background:none;cursor:pointer;font-size:13px;color:#333;padding:2px;}
+
+#taskbar{position:fixed;left:0;right:0;bottom:0;height:50px;background:var(--window-bg);border-top:2px solid var(--border-color);display:flex;align-items:center;padding:0 12px;gap:12px;z-index:1000;}
+#start-btn{font-family:'Gaegu',cursive;font-size:16px;background:var(--accent-color);color:#fff;border:none;border-radius:10px;padding:7px 14px;}
+#start-menu{position:absolute;bottom:54px;left:12px;width:200px;background:var(--window-bg);border:2px solid var(--border-color);border-radius:12px;padding:8px;display:none;flex-direction:column;gap:2px;max-height:70vh;overflow-y:auto;box-shadow:0 -4px 16px rgba(0,0,0,.15);}
+#start-menu.open{display:flex;}
+.menu-group-label{font-size:11px;color:var(--sub-color);font-weight:700;margin:6px 4px 2px;}
+.menu-item{text-align:left;background:none;border:none;padding:7px 8px;border-radius:8px;font-size:13px;color:var(--text-color);font-family:inherit;}
+.menu-item:hover{background:rgba(0,0,0,.06);}
+#clock{margin-left:auto;font-family:'Gaegu',cursive;font-size:15px;}
+
+.section-label{font-size:12px;font-weight:700;color:var(--sub-color);margin:0 0 4px;}
+.bg-options-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.bg-options-row button{padding:5px 10px;font-size:12px;}
+.bg-options-row button.active{outline:2px solid var(--sub-color);}
+.color-field{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:13px;}
+.color-field input[type=color]{width:36px;height:26px;border:none;padding:0;background:none;cursor:pointer;}
+
+.timer-display{font-family:'Gaegu',cursive;font-size:40px;text-align:center;margin:10px 0;}
+.timer-btns{display:flex;gap:8px;justify-content:center;}
+
+.music-embed{margin-top:10px;}
+.music-embed iframe{width:100%;aspect-ratio:16/9;border:none;border-radius:8px;}
+
+hr{border:none;border-top:1px solid rgba(0,0,0,.1);margin:14px 0;}
+
+@media (max-width:480px){
+  .window{width:88vw;left:6vw !important;}
+}
+</style>
+</head>
+<body class="mode-light">
+<div id="desktop" class="pattern-dot">
+
+  <div id="sticker-layer"></div>
+
+  <div id="desktop-icons">
+    <div class="dicon" data-win="win-pc"><span class="dicon-emoji">🖥️</span><span class="dicon-label">내 PC</span></div>
+    <div class="dicon" data-win="win-profile"><span class="dicon-emoji">🪪</span><span class="dicon-label">인물 소개</span></div>
+    <div class="dicon" data-win="win-album"><span class="dicon-emoji">💽</span><span class="dicon-label">하드디스크</span></div>
+    <div class="dicon" data-win="win-memo"><span class="dicon-emoji">📝</span><span class="dicon-label">방명록</span></div>
+  </div>
+
+  <div class="window" id="win-pc" style="left:40px;top:40px;width:260px;">
+    <div class="win-titlebar"><span class="win-title">🖥️ 내 PC</span><button class="win-close" data-win="win-pc">✕</button></div>
+    <div class="win-body">
+      <div class="pc-grid">
+        <div class="dicon" data-win="win-profile"><span class="dicon-emoji">🪪</span><span class="dicon-label">인물 소개</span></div>
+        <div class="dicon" data-win="win-album"><span class="dicon-emoji">💽</span><span class="dicon-label">하드디스크</span></div>
+        <div class="dicon" data-win="win-memo"><span class="dicon-emoji">📝</span><span class="dicon-label">방명록</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="window open" id="win-profile" style="left:340px;top:40px;width:380px;">
+    <div class="win-titlebar"><span class="win-title">🪪 인물 소개</span><button class="win-close" data-win="win-profile">✕</button></div>
+    <div class="win-body">
+      <div class="profile-photo" id="profile-photo-area">
+        <img id="profile-photo-img" style="display:none;">
+        <span id="profile-photo-placeholder">사진이 없습니다</span>
+      </div>
+      <div class="profile-fields">
+        <label>이름<input type="text" id="p-name" readonly></label>
+        <label>소속 · 출처<input type="text" id="p-source" readonly></label>
+        <div class="profile-row">
+          <label>생일<input type="text" id="p-birthday" readonly></label>
+          <label>나이<input type="text" id="p-age" readonly></label>
+        </div>
+        <label>특징<textarea id="p-traits" readonly></textarea></label>
+        <label>좋아하는 것<textarea id="p-likes" readonly></textarea></label>
+        <label>한마디<textarea id="p-quote" readonly></textarea></label>
+      </div>
+    </div>
+  </div>
+
+  <div class="window" id="win-album" style="left:120px;top:380px;width:330px;">
+    <div class="win-titlebar"><span class="win-title">💽 하드디스크 (사진첩)</span><button class="win-close" data-win="win-album">✕</button></div>
+    <div class="win-body">
+      <div class="album-grid" id="album-grid"></div>
+    </div>
+  </div>
+
+  <div class="window" id="win-memo" style="left:480px;top:400px;width:320px;">
+    <div class="win-titlebar"><span class="win-title">📝 방명록</span><button class="win-close" data-win="win-memo">✕</button></div>
+    <div class="win-body">
+      <textarea id="memo-input" placeholder="주인에게 방명록을 남겨주세요..." style="width:100%;min-height:60px;padding:8px;border:1.5px solid var(--sub-color);border-radius:8px;font-family:inherit;margin-bottom:8px;"></textarea>
+      <button id="memo-add">작성</button>
+      <ul class="list-plain" id="memo-list" style="margin-top:10px;"></ul>
+    </div>
+  </div>
+
+  <div class="window" id="win-dday" style="left:140px;top:140px;width:270px;">
+    <div class="win-titlebar"><span class="win-title">♥ 디데이</span><button class="win-close" data-win="win-dday">✕</button></div>
+    <div class="win-body">
+      <ul class="list-plain" id="dday-list"></ul>
+    </div>
+  </div>
+
+  <div class="window" id="win-todo" style="left:470px;top:140px;width:250px;">
+    <div class="win-titlebar"><span class="win-title">✓ 할 일</span><button class="win-close" data-win="win-todo">✕</button></div>
+    <div class="win-body">
+      <ul class="list-plain" id="todo-list"></ul>
+    </div>
+  </div>
+
+  <div class="window" id="win-timer" style="left:200px;top:420px;width:230px;">
+    <div class="win-titlebar"><span class="win-title">⏱ 타이머</span><button class="win-close" data-win="win-timer">✕</button></div>
+    <div class="win-body">
+      <div class="timer-display" id="timer-display">25:00</div>
+      <div class="timer-btns">
+        <button id="timer-start">시작</button>
+        <button id="timer-pause" class="ghost">일시정지</button>
+        <button id="timer-reset" class="ghost">초기화</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="window" id="win-music" style="left:740px;top:40px;width:270px;">
+    <div class="win-titlebar"><span class="win-title">♪ 뮤직</span><button class="win-close" data-win="win-music">✕</button></div>
+    <div class="win-body">
+      <div class="music-embed" id="music-embed"></div>
+    </div>
+  </div>
+
+  <div class="window" id="win-sticker" style="left:740px;top:380px;width:220px;">
+    <div class="win-titlebar"><span class="win-title">🌸 스티커</span><button class="win-close" data-win="win-sticker">✕</button></div>
+    <div class="win-body">
+      <p style="font-size:12px;opacity:.7;margin-top:0;">눌러서 바탕화면에 붙여줘</p>
+      <div id="sticker-palette" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+    </div>
+  </div>
+
+  <div class="window" id="win-bgsettings" style="left:330px;top:200px;width:270px;">
+    <div class="win-titlebar"><span class="win-title">🎨 바탕화면 설정</span><button class="win-close" data-win="win-bgsettings">✕</button></div>
+    <div class="win-body">
+      <p class="section-label">화면 모드</p>
+      <div class="bg-options-row">
+        <button class="mode-btn" data-mode="light">☀️ 라이트</button>
+        <button class="mode-btn" data-mode="dark">🌙 다크</button>
+      </div>
+      <p class="section-label">무늬</p>
+      <div class="bg-options-row">
+        <button class="pattern-btn" data-pattern="none">민무늬</button>
+        <button class="pattern-btn" data-pattern="dot">도트</button>
+        <button class="pattern-btn" data-pattern="grid">격자</button>
+        <button class="pattern-btn" data-pattern="check">체크</button>
+        <button class="pattern-btn" data-pattern="gradient">그라데이션</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="lightbox" id="lightbox">
+    <img id="lightbox-img">
+    <button id="lightbox-close">✕</button>
+  </div>
+
+</div>
+
+<div id="taskbar">
+  <button id="start-btn">☰ 시작</button>
+  <div id="start-menu">
+    <div class="menu-group-label">도구함</div>
+    <button class="menu-item" data-win="win-pc">🖥️ 내 PC</button>
+    <button class="menu-item" data-win="win-profile">🪪 인물 소개</button>
+    <button class="menu-item" data-win="win-album">💽 하드디스크</button>
+    <button class="menu-item" data-win="win-memo">📝 방명록</button>
+    <div class="menu-group-label">위젯</div>
+    <button class="menu-item" data-win="win-dday">♥ 디데이</button>
+    <button class="menu-item" data-win="win-todo">✓ 할 일</button>
+    <button class="menu-item" data-win="win-timer">⏱ 타이머</button>
+    <button class="menu-item" data-win="win-music">♪ 뮤직</button>
+    <div class="menu-group-label">꾸미기</div>
+    <button class="menu-item" data-win="win-sticker">🌸 스티커</button>
+    <button class="menu-item" data-win="win-bgsettings">🎨 바탕화면 설정</button>
+  </div>
+  <div id="clock">00:00</div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* =================================================================
+     ⭐ [주인용 데이터 설정 구역] ⭐
+     여기에 적어둔 값들이 사이트에 기본으로 고정되어 타인에게 보여집니다.
+     ================================================================= */
+  var MY_SITE_DATA = {
+    profile: {
+      photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500', // 프로필 이미지 주소 (인터넷 링크 가능)
+      name: '김메리',
+      source: 'Melty Ice 블로그',
+      birthday: '07.24',
+      age: '20',
+      traits: '귀엽고 레트로한 무드를 좋아합니다. 🫧',
+      likes: '푸딩, 체리, 츄러스, 90년대 시티팝 🍒',
+      quote: '내 방에 놀러온 걸 환영해!'
+    },
+    // 하드디스크(사진첩)에 띄울 사진들의 주소 목록
+    photos: [
+      {id:'p1', src:'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=400'},
+      {id:'p2', src:'https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=400'},
+      {id:'p3', src:'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400'}
+    ],
+    // 고정 디데이
+    ddays: [
+      {id:'d1', title:'블로그 오픈일', date:'2026-06-01', color:'#ff6f9c'}
+    ],
+    // 고정 할 일
+    todos: [
+      {id:'t1', text:'방명록 확인하기', done: false},
+      {id:'t2', text:'배경 음악 바꾸기', done: true}
+    ],
+    // 유튜브 배경음악 주소
+    music: 'https://www.youtube.com/watch?v=5qap5aO4i9A'
+  };
+  /* ================================================================= */
+
+
+  var state = {
+    visitorMemos: [],
+    stickers: [],
+    windowStyles: {}, // 창 크기 및 위치 저장용
+    bg: {mode:'light', bgColor:'#ffe3ee', pattern:'dot', patternColor:'#ffc9de', accentColor:'#ff6f9c', subColor:'#9b7cff'}
+  };
+
+  var zTop = 10;
+  var uidCounter = 0;
+  function newId(){ uidCounter += 1; return 'id'+Date.now()+'_'+uidCounter; }
+
+  function save(key, value){
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch(e){}
+    return Promise.resolve();
+  }
+  function load(key){
+    try {
+      var v = localStorage.getItem(key);
+      return Promise.resolve(v ? JSON.parse(v) : null);
+    } catch(e){ return Promise.resolve(null); }
+  }
+
+  /* ---------- Window management ---------- */
+  function openWindow(id){
+    var el = document.getElementById(id);
+    if(!el) return;
+    el.classList.add('open');
+    bringToFront(el);
+  }
+  function closeWindow(id){
+    var el = document.getElementById(id);
+    if(el) el.classList.remove('open');
+  }
+  function bringToFront(el){
+    zTop += 1;
+    el.style.zIndex = zTop;
+  }
+  
+  function makeWindowDraggableAndResizable(win){
+    var handle = win.querySelector('.win-titlebar');
+    if(!handle) return;
+    var dragging=false, sx=0, sy=0, ol=0, ot=0;
+    
+    handle.addEventListener('pointerdown', function(e){
+      if(e.target.closest('.win-close')) return;
+      dragging=true;
+      bringToFront(win);
+      sx=e.clientX; sy=e.clientY;
+      var rect = win.getBoundingClientRect();
+      var parentRect = win.parentElement.getBoundingClientRect();
+      ol = rect.left - parentRect.left; ot = rect.top - parentRect.top;
+      try{ handle.setPointerCapture(e.pointerId); }catch(err){}
+    });
+    handle.addEventListener('pointermove', function(e){
+      if(!dragging) return;
+      var dx=e.clientX-sx, dy=e.clientY-sy;
+      win.style.left = (ol+dx)+'px';
+      win.style.top = (ot+dy)+'px';
+    });
+    
+    var saveWinStyle = function(){
+      state.windowStyles[win.id] = {
+        left: win.style.left,
+        top: win.style.top,
+        width: win.style.width,
+        height: win.style.height
+      };
+      save('windowStyles', state.windowStyles);
+    };
+
+    handle.addEventListener('pointerup', function(){ dragging=false; saveWinStyle(); });
+    handle.addEventListener('pointercancel', function(){ dragging=false; });
+    
+    // 크기 조절 감지 (Resize observer 대용으로 간단하게 마우스 뗄 때 저장)
+    win.addEventListener('mouseup', saveWinStyle);
+  }
+
+  document.querySelectorAll('.window').forEach(function(w){
+    makeWindowDraggableAndResizable(w);
+    w.addEventListener('pointerdown', function(){ bringToFront(w); });
+  });
+  document.querySelectorAll('[data-win]').forEach(function(el){
+    el.addEventListener('dblclick', function(){ openWindow(el.dataset.win); });
+    if(el.classList.contains('menu-item')){
+      el.addEventListener('click', function(){ openWindow(el.dataset.win); closeStartMenu(); });
+    }
+  });
+  document.querySelectorAll('.win-close').forEach(function(btn){
+    btn.addEventListener('click', function(){ closeWindow(btn.dataset.win); });
+  });
+
+  /* ---------- Start menu ---------- */
+  var startBtn = document.getElementById('start-btn');
+  var startMenu = document.getElementById('start-menu');
+  function closeStartMenu(){ startMenu.classList.remove('open'); }
+  startBtn.addEventListener('click', function(e){ e.stopPropagation(); startMenu.classList.toggle('open'); });
+  document.addEventListener('click', function(e){
+    if(!startMenu.contains(e.target) && e.target!==startBtn) closeStartMenu();
+  });
+
+  /* ---------- Clock ---------- */
+  function tickClock(){
+    var d = new Date();
+    var hh = String(d.getHours()).padStart(2,'0');
+    var mm = String(d.getMinutes()).padStart(2,'0');
+    document.getElementById('clock').textContent = hh+':'+mm;
+  }
+  tickClock(); setInterval(tickClock, 10000);
+
+  /* ---------- Profile ---------- */
+  function renderProfile(){
+    var p = MY_SITE_DATA.profile;
+    var pPhotoImg = document.getElementById('profile-photo-img');
+    var pPhotoPlaceholder = document.getElementById('profile-photo-placeholder');
+    
+    if(p.photo){
+      pPhotoImg.src = p.photo;
+      pPhotoImg.style.display='block';
+      pPhotoPlaceholder.style.display='none';
+    }
+    ['name','source','birthday','age','traits','likes','quote'].forEach(function(f){
+      document.getElementById('p-'+f).value = p[f] || '';
+    });
+  }
+
+  /* ---------- Visitor Memo (방명록) ---------- */
+  var memoInput = document.getElementById('memo-input');
+  var memoList = document.getElementById('memo-list');
+  document.getElementById('memo-add').addEventListener('click', function(){
+    var text = memoInput.value.trim();
+    if(!text) return;
+    state.visitorMemos.unshift({id:newId(), text:text});
+    memoInput.value='';
+    renderMemos(); save('visitorMemos', state.visitorMemos);
+  });
+  function renderMemos(){
+    memoList.innerHTML='';
+    state.visitorMemos.forEach(function(m){
+      var li = document.createElement('li');
+      li.className='list-item';
+      var span = document.createElement('span');
+      span.style.whiteSpace='pre-wrap';
+      span.textContent = m.text;
+      li.appendChild(span);
+      memoList.appendChild(li);
+    });
+  }
+
+  /* ---------- Album (하드디스크) ---------- */
+  var albumGrid = document.getElementById('album-grid');
+  function renderAlbum(){
+    albumGrid.innerHTML='';
+    MY_SITE_DATA.photos.forEach(function(p){
+      var tile = document.createElement('div');
+      tile.className='album-thumb';
+      var img = document.createElement('img');
+      img.src = p.src;
+      img.addEventListener('click', function(){ openLightbox(p.src); });
+      tile.appendChild(img);
+      albumGrid.appendChild(tile);
+    });
+  }
+  function openLightbox(src){
+    document.getElementById('lightbox-img').src = src;
+    document.getElementById('lightbox').classList.add('open');
+  }
+  document.getElementById('lightbox-close').addEventListener('click', function(){
+    document.getElementById('lightbox').classList.remove('open');
+  });
+
+  /* ---------- D-day ---------- */
+  var ddayList = document.getElementById('dday-list');
+  function renderDday(){
+    ddayList.innerHTML='';
+    MY_SITE_DATA.ddays.forEach(function(d){
+      var today = new Date(); today.setHours(0,0,0,0);
+      var target = new Date(d.date); target.setHours(0,0,0,0);
+      var diff = Math.round((target-today)/86400000);
+      var label = diff===0 ? 'D-DAY' : (diff>0 ? ('D-'+diff) : ('D+'+Math.abs(diff)));
+      var li = document.createElement('li');
+      li.className='list-item';
+      li.style.borderLeft = '4px solid '+(d.color||'#ff6f9c');
+      var span = document.createElement('span');
+      span.textContent = d.title+' · ';
+      var b = document.createElement('b');
+      b.textContent = label;
+      span.appendChild(b);
+      li.appendChild(span);
+      ddayList.appendChild(li);
+    });
+  }
+
+  /* ---------- Todo ---------- */
+  var todoList = document.getElementById('todo-list');
+  function renderTodo(){
+    todoList.innerHTML='';
+    MY_SITE_DATA.todos.forEach(function(t){
+      var li = document.createElement('li');
+      li.className='list-item'+(t.done?' done':'');
+      var wrap = document.createElement('span');
+      wrap.style.cssText='display:flex;align-items:center;gap:6px;flex:1;';
+      var cb = document.createElement('input');
+      cb.type='checkbox'; cb.checked=t.done; cb.disabled = true; // 방문자는 수정 불가
+      var span = document.createElement('span');
+      span.textContent = t.text;
+      wrap.appendChild(cb); wrap.appendChild(span);
+      li.appendChild(wrap);
+      todoList.appendChild(li);
+    });
+  }
+
+  /* ---------- Music ---------- */
+  function extractYoutubeId(url){
+    var m = url.match(/(?:youtu\.be\/|v=|embed\/)([A-Za-z0-9_-]{11})/);
+    return m ? m[1] : null;
+  }
+  function renderMusic(){
+    var wrap = document.getElementById('music-embed');
+    var id = extractYoutubeId(MY_SITE_DATA.music||'');
+    wrap.innerHTML = id ? '<iframe src="https://www.youtube.com/embed/'+id+'" allow="autoplay; encrypted-media" allowfullscreen></iframe>' : '';
+  }
+
+  /* ---------- Stickers ---------- */
+  var stickerLayer = document.getElementById('sticker-layer');
+  var stickerEmojis = ['🐱','🍓','🍒','🌸','💌','🎀','🍡','🧸','✨','🍰','🩰','🫧','🦢','🍮','🍬'];
+  function buildStickerPalette(){
+    var wrap = document.getElementById('sticker-palette');
+    wrap.innerHTML='';
+    stickerEmojis.forEach(function(em){
+      var b = document.createElement('button');
+      b.textContent = em;
+      b.style.cssText='font-size:24px;border:none;background:none;cursor:pointer;';
+      b.addEventListener('click', function(){ addSticker(em); });
+      wrap.appendChild(b);
+    });
+  }
+  function addSticker(emoji, data){
+    var s = data || {id:newId(), emoji:emoji, x:120+Math.random()*120, y:120+Math.random()*120, scale:1, rotation:0, outline:'none', shadow:false, z:(++zTop)};
+    if(!data) state.stickers.push(s);
+    renderSticker(s);
+    save('stickers', state.stickers);
+  }
+  function renderSticker(s){
+    var el = document.createElement('div');
+    el.className='sticker';
+    el.dataset.id = s.id;
+    el.style.left = s.x+'px'; el.style.top = s.y+'px'; el.style.zIndex = s.z;
+    el.style.transform = 'rotate('+s.rotation+'deg) scale('+s.scale+')';
+    el.innerHTML = s.emoji+
+      '<div class="handle rotate"></div>'+
+      '<div class="handle resize"></div>'+
+      '<div class="mini-toolbar"><button data-act="del">×</button></div>';
+    stickerLayer.appendChild(el);
+    setupStickerEvents(el, s);
+  }
+  function setupStickerEvents(el, s){
+    var mode=null, sx=0, sy=0, startScale=1, startRot=0, startX=0, startY=0;
+    el.addEventListener('click', function(e){
+      e.stopPropagation();
+      document.querySelectorAll('.sticker.selected').forEach(function(o){ if(o!==el) o.classList.remove('selected'); });
+      el.classList.toggle('selected');
+    });
+    el.addEventListener('pointerdown', function(e){
+      if(e.target.classList.contains('handle') || e.target.closest('.mini-toolbar')) return;
+      mode='move'; sx=e.clientX; sy=e.clientY; startX=s.x; startY=s.y;
+      zTop+=1; s.z=zTop; el.style.zIndex=zTop;
+      try{ el.setPointerCapture(e.pointerId); }catch(err){}
+    });
+    el.querySelector('.handle.resize').addEventListener('pointerdown', function(e){
+      e.stopPropagation(); mode='resize'; sx=e.clientX; sy=e.clientY; startScale=s.scale;
+      try{ el.setPointerCapture(e.pointerId); }catch(err){}
+    });
+    el.querySelector('.handle.rotate').addEventListener('pointerdown', function(e){
+      e.stopPropagation(); mode='rotate'; sx=e.clientX; sy=e.clientY; startRot=s.rotation;
+      try{ el.setPointerCapture(e.pointerId); }catch(err){}
+    });
+    el.addEventListener('pointermove', function(e){
+      if(!mode) return;
+      var dx=e.clientX-sx, dy=e.clientY-sy;
+      if(mode==='move'){
+        s.x = startX+dx; s.y = startY+dy;
+        el.style.left=s.x+'px'; el.style.top=s.y+'px';
+      } else if(mode==='resize'){
+        s.scale = Math.max(0.3, Math.min(4, startScale + (dx+dy)/120));
+        el.style.transform = 'rotate('+s.rotation+'deg) scale('+s.scale+')';
+      } else if(mode==='rotate'){
+        s.rotation = Math.round(startRot + dx);
+        el.style.transform = 'rotate('+s.rotation+'deg) scale('+s.scale+')';
+      }
+    });
+    el.addEventListener('pointerup', function(){ if(mode){ mode=null; save('stickers', state.stickers); } });
+    el.querySelector('.mini-toolbar').addEventListener('click', function(e){
+      if(e.target.dataset.act==='del'){
+        state.stickers = state.stickers.filter(function(x){ return x.id!==s.id; });
+        el.remove(); save('stickers', state.stickers);
+      }
+    });
+  }
+  document.getElementById('desktop').addEventListener('click', function(e){
+    if(!e.target.closest('.sticker')){
+      document.querySelectorAll('.sticker.selected').forEach(function(o){ o.classList.remove('selected'); });
+    }
+  });
+
+  /* ---------- Background settings ---------- */
+  var desktopEl = document.getElementById('desktop');
+  function applyBg(){
+    var b = state.bg;
+    document.body.classList.toggle('mode-dark', b.mode==='dark');
+    document.body.classList.toggle('mode-light', b.mode!=='dark');
+    document.documentElement.style.setProperty('--bg-color', b.bgColor);
+    document.documentElement.style.setProperty('--pattern-color', b.patternColor);
+    document.documentElement.style.setProperty('--accent-color', b.accentColor);
+    document.documentElement.style.setProperty('--sub-color', b.subColor);
+    desktopEl.classList.remove('pattern-dot','pattern-grid','pattern-check','pattern-gradient');
+    if(b.pattern!=='none') desktopEl.classList.add('pattern-'+b.pattern);
+    document.querySelectorAll('.mode-btn').forEach(function(btn){ btn.classList.toggle('active', btn.dataset.mode===b.mode); });
+    document.querySelectorAll('.pattern-btn').forEach(function(btn){ btn.classList.toggle('active', btn.dataset.pattern===b.pattern); });
+  }
+  document.querySelectorAll('.mode-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){ state.bg.mode=btn.dataset.mode; applyBg(); save('bg', state.bg); });
+  });
+  document.querySelectorAll('.pattern-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){ state.bg.pattern=btn.dataset.pattern; applyBg(); save('bg', state.bg); });
+  });
+
+  /* ---------- Init ---------- */
+  function init(){
+    buildStickerPalette();
+    renderProfile();
+    renderAlbum();
+    renderDday();
+    renderTodo();
+    renderMusic();
+    applyBg();
+
+    Promise.all([
+      load('visitorMemos'), load('stickers'), load('bg'), load('windowStyles')
+    ]).then(function(loaded){
+      if(loaded[0]) { state.visitorMemos = loaded[0]; renderMemos(); }
+      if(loaded[2]) { state.bg = loaded[2]; applyBg(); }
+      
+      // 저장된 창 스타일(위치, 크기) 복원
+      if(loaded[3]) {
+        state.windowStyles = loaded[3];
+        Object.keys(state.windowStyles).forEach(function(id){
+          var win = document.getElementById(id);
+          var styles = state.windowStyles[id];
+          if(win && styles){
+            if(styles.left) win.style.left = styles.left;
+            if(styles.top) win.style.top = styles.top;
+            if(styles.width) win.style.width = styles.width;
+            if(styles.height) win.style.height = styles.height;
+          }
+        });
+      }
+
+      if(loaded[1] && loaded[1].length){
+        loaded[1].forEach(function(s){ addSticker(null, s); });
+      }
+    });
+  }
+  init();
+
+})();
+</script>
+</body>
+</html>
